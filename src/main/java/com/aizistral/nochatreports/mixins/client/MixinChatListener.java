@@ -1,5 +1,6 @@
 package com.aizistral.nochatreports.mixins.client;
 
+import java.time.Instant;
 import java.util.Base64;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,8 +30,7 @@ public class MixinChatListener {
 	 */
 
 	@Inject(method = "evaluateTrustLevel", at = @At("HEAD"), cancellable = true)
-	private void onEvaluateTrustLevel(ChatSender chatSender, PlayerChatMessage playerChatMessage,
-			Component component, PlayerInfo playerInfo, CallbackInfoReturnable<ChatTrustLevel> info) {
+	private void onEvaluateTrustLevel(PlayerChatMessage playerChatMessage, Component component, PlayerInfo playerInfo, Instant instant, CallbackInfoReturnable<ChatTrustLevel> info) {
 		if (NoReportsConfig.suppressMessageTrustIndicators()) {
 			info.setReturnValue(ChatTrustLevel.SECURE);
 		}
@@ -38,9 +38,9 @@ public class MixinChatListener {
 		// Debug never dies
 		if (NoReportsConfig.isDebugLogEnabled()) {
 			NoChatReports.LOGGER.info("Received message: {}, from: {}, signature: {}",
-					Component.Serializer.toStableJson(playerChatMessage.signedContent()),
-					chatSender.name().getString(),
-					Base64.getEncoder().encodeToString(playerChatMessage.signature().saltSignature().signature()));
+					Component.Serializer.toStableJson(playerChatMessage.signedContent().decorated()),
+					playerInfo.getTabListDisplayName().toString(),
+					Base64.getEncoder().encodeToString(playerChatMessage.headerSignature().asByteBuffer().array()));
 		}
 	}
 
